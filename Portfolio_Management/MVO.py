@@ -120,7 +120,7 @@ class MVO:
         '''
         Description:
         ------------
-        Optimize the portfolio to achieve a given target volatility.
+        Optimize the portfolio returns a given target volatility.
 
         Parameters:
         -----------
@@ -164,6 +164,7 @@ class MVO:
         # args 传递给
         return result
     
+    
     def plot_efficient_frontier(self,vol:np.ndarray=None):
         '''   
         Description:
@@ -204,6 +205,12 @@ class MVO:
         plt.title('Efficient Frontier')
         plt.grid(True)
         plt.show()
+
+    def optimize_return_analytical(intr):
+        pass
+    
+
+
             
         
         
