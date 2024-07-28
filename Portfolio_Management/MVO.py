@@ -9,7 +9,7 @@ from typing import Dict, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
-from scipy.optimize import minimize
+from scipy.optimize import OptimizeResult, minimize
 
 
 class MVO:
@@ -82,7 +82,6 @@ class MVO:
     def cov_matrix(self, cov_matrix: np.ndarray):
         self._cov_matrix = cov_matrix
 
-
     def portfolio_performance(self, weights: np.ndarray, returns: np.ndarray, cov_matrix: np.ndarray) -> Tuple[float, float]:
         '''
         Description:
@@ -111,12 +110,10 @@ class MVO:
         '''
         Description:
             calculate the return and maximize it given volatility using scipy.optimize.minimize
-            Return the negative value of returns since we need to minimize 
         '''
-        # 返回收益的负值，因为 scipy.optimize.minimize 是最小化目标函数
-        return -self.portfolio_performance(weights, returns, cov_matrix)[0]
+        return -1*self.portfolio_performance(weights, returns, cov_matrix)[0]
     
-    def optimize_return_numerical(self,target_volatility,initial_weights=None,bounds=None ,options=None, constraints= None, disp = False):
+    def optimize_return_numerical(self, target_volatility: float, initial_weights: Optional[np.ndarray] = None,bounds: Optional[Tuple[Tuple[float, float], ...]] = None, options: Optional[Dict[str, float]] = None,constraints: Optional[Dict[str, float]] = None, disp: bool = False) -> OptimizeResult:
         '''
         Description:
         ------------
@@ -206,11 +203,45 @@ class MVO:
         plt.grid(True)
         plt.show()
 
-    def optimize_return_analytical(intr):
+    def optimize_return_analytical(self,intr):
         pass
+
+    def __utility(self,weights: np.ndarray, returns: np.ndarray, cov_matrix: np.ndarray, risk_param: float) -> float:
+        return -1*(np.dot(weights,returns)-risk_param/2*np.dot(weights.T, np.dot(cov_matrix, weights)))
+
+    def optimize_by_utility(self,risk_param:np.ndarray,bounds:Optional[Tuple[Tuple[float, float], ...]]=None,initial_weights:Optional[np.ndarray] = None,target_volatility:Optional[np.ndarray]=None,options:Optional[Dict[str,float]]=None,constraints:Optional[Dict[str, float]] = None,disp = False)-> OptimizeResult:
+        '''
+        Discription:
+        Get optimal portfolio by maximizing utility (= return - lambda/2*volatility)
+    
+        ''' 
+
+        if initial_weights is None:
+            initial_weights = np.array(self.num_assets * [1. / self.num_assets])
+        
+        if bounds is None:
+            bounds = tuple((0, 1) for _ in range(self.num_assets))
+        
+        if options is None:
+            options = {'maxiter': 1000, 'ftol': 1e-9, 'disp': disp, 'eps': 1e-8}
+        
+        if constraints is None:
+            # 定义约束条件
+            constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1}) # 权重之和等于 1
+
+            
+        result = minimize(self.__utility, x0 = initial_weights, args=(self.returns,self.cov_matrix, risk_param), method='SLSQP', bounds=bounds, constraints=constraints, options=options)
+        # maximize_return 需要最小化的函数 
+        # initial_weights 初始搜索值
+        # args 传递给
+        return result
+
+
+        
+
     
 
 
-            
+    
         
         
